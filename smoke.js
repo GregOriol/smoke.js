@@ -21,6 +21,11 @@
 					ff.style.zIndex = smoke.zindex;
 					smoke.zindex++;
 					document.body.appendChild(ff);
+
+			// Attaching fastclick if available
+			if (typeof FastClick != 'undefined') {
+				FastClick.attach(ff);
+			}
 		},
 	
 		newdialog: function() {
