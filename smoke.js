@@ -61,10 +61,17 @@
 				box;
 
 			if (f.type === 'prompt') {
-				prompt = 
-					'<div class="dialog-prompt">'+
-						'<input id="dialog-input-'+f.newid+'" type="text" ' + (f.params.value ? 'value="' + f.params.value + '"' : '') + ' />'+
-					'</div>';
+				if (typeof f.params.custom !== 'undefined') {
+					prompt = 
+						'<div class="dialog-prompt">'+
+							
+						'</div>';
+				} else {
+					prompt = 
+						'<div class="dialog-prompt">'+
+							'<input id="dialog-input-'+f.newid+'" type="text" ' + (f.params.value ? 'value="' + f.params.value + '"' : '') + ' />'+
+						'</div>';
+				}
 			}
 
 			if (f.params.ok) {
@@ -98,13 +105,15 @@
 					}
 				} else if (f.type === 'prompt' || f.type === 'confirm') {
 					if (f.params.reverseButtons) {
-						buttons +=
-							'<button id="'+f.type+'-ok-'+f.newid+'">'+ok+'</button>' +
-							'<button id="'+f.type+'-cancel-'+f.newid+'" class="cancel">'+cancel+'</button>';
+						buttons += '<button id="'+f.type+'-ok-'+f.newid+'">'+ok+'</button>';
+						if (f.params.cancel) {
+							buttons += '<button id="'+f.type+'-cancel-'+f.newid+'" class="cancel">'+cancel+'</button>';
+						}
 					} else {
-						buttons +=
-							'<button id="'+f.type+'-cancel-'+f.newid+'" class="cancel">'+cancel+'</button>'+
-							'<button id="'+f.type+'-ok-'+f.newid+'">'+ok+'</button>';
+						if (f.params.cancel) {
+							buttons += '<button id="'+f.type+'-cancel-'+f.newid+'" class="cancel">'+cancel+'</button>';
+						}
+						buttons += '<button id="'+f.type+'-ok-'+f.newid+'">'+ok+'</button>';
 					}
 				}
 				buttons += '</div>';
@@ -132,7 +141,11 @@
 		finishbuild: function(e, f, box) {
 			var ff = document.getElementById('smoke-out-' + f.newid);
 
-			ff.className = 'smoke-base smoke-visible  smoke-' + f.type;
+			ff.className = 'smoke-base smoke-visible smoke-' + f.type;
+			if (f.type === 'prompt' && typeof f.params.custom !== 'undefined') {
+				ff.className += '-custom';
+			}
+
 			ff.innerHTML = box;
 
 			while (ff.innerHTML === '') {
@@ -174,6 +187,10 @@
 					break;
 				default:
 					throw 'Unknown type: ' + f.type;
+			}
+			
+			if (typeof f.params.ready !== 'undefined') {
+				f.params.ready(ff);
 			}
 		},
 
@@ -297,26 +314,36 @@
 		finishbuildPrompt: function (e, f, box) {
 			var pi = document.getElementById('dialog-input-' + f.newid);
 
-			setTimeout(function () {
-				pi.focus();
-				pi.select();
-			}, 100);
+			if (typeof f.params.custom === 'undefined') {
+				setTimeout(function () {
+					pi.focus();
+					pi.select();
+				}, 100);
+			}
 
-			smoke.listen(
-				document.getElementById('prompt-cancel-' + f.newid),
-				'click', 
-				function () {
-					smoke.destroy(f.type, f.newid);
-					f.callback(false);
-				}
-			);
+			if (f.params.cancel) {
+				smoke.listen(
+					document.getElementById('prompt-cancel-' + f.newid),
+					'click', 
+					function () {
+						smoke.destroy(f.type, f.newid);
+					
+						f.callback(false);
+					}
+				);
+			}
 		
 			smoke.listen(
 				document.getElementById('prompt-ok-' + f.newid),
 				'click', 
 				function () {
 					smoke.destroy(f.type, f.newid);
-					f.callback(pi.value);
+					
+					if (typeof f.params.custom !== 'undefined') {
+						f.callback(true);
+					} else {
+						f.callback(pi.value);
+					}
 				}
 			);
 
@@ -327,9 +354,15 @@
 
 				if (e.keyCode === 13) {
 					smoke.destroy(f.type, f.newid);
-					f.callback(pi.value);
+					
+					if (typeof f.params.custom !== 'undefined') {
+						f.callback(true);
+					} else {
+						f.callback(pi.value);
+					}
 				} else if (e.keyCode === 27) {
 					smoke.destroy(f.type, f.newid);
+					
 					f.callback(false);
 				}
 			};
