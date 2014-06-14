@@ -131,10 +131,22 @@
 
 			if (!smoke.init) {
 				smoke.listen(window, 'load', function() {
-					smoke.finishbuild(e,f,box);
+					if (typeof f.params.delay !== 'undefined') {
+						setTimeout(function() {
+							smoke.finishbuild(e,f,box);
+						}, f.params.delay);
+					} else {
+						smoke.finishbuild(e,f,box);
+					}
 				});
 			} else {
-				smoke.finishbuild(e,f,box);
+				if (typeof f.params.delay !== 'undefined') {
+					setTimeout(function() {
+						smoke.finishbuild(e,f,box);
+					}, f.params.delay);
+				} else {
+					smoke.finishbuild(e,f,box);
+				}
 			}
 		},
 
@@ -145,6 +157,8 @@
 			if (f.type === 'prompt' && typeof f.params.custom !== 'undefined') {
 				ff.className += '-custom';
 			}
+
+			window.scrollBy(0, 0); // hack to reset bugs with fixed positioning on iOS
 
 			ff.innerHTML = box;
 
